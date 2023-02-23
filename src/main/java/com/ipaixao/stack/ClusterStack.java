@@ -17,7 +17,7 @@ public class ClusterStack extends Stack {
         super(scope, id, props);
 
         cluster = Cluster.Builder.create(this, id)
-                .clusterName("ibeer-cluster")
+                .clusterName("ibeer-cluster-fargate")
                 .vpc(vpc)
                 .build();
     }

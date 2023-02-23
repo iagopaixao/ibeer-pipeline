@@ -1,9 +1,6 @@
 package com.ipaixao.service;
 
-import software.amazon.awscdk.core.Duration;
-import software.amazon.awscdk.core.RemovalPolicy;
-import software.amazon.awscdk.core.Stack;
-import software.amazon.awscdk.core.StackProps;
+import software.amazon.awscdk.core.*;
 import software.amazon.awscdk.services.applicationautoscaling.EnableScalingProps;
 import software.amazon.awscdk.services.ecs.*;
 import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedFargateService;
@@ -12,7 +9,15 @@ import software.amazon.awscdk.services.elasticloadbalancingv2.HealthCheck;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.constructs.Construct;
 
+import java.util.Map;
+
 public class ServiceStack extends Stack {
+    static final Map<String, String> ENV_VARIABLES = Map.of(
+            /*"SPRING_DATASOURCE_URL", "jdbc:mariadb://" + Fn.importValue("rds-endpoint")
+                                                               + ":8085/ibeer_db?createDatabaseIfNotExist=true",*/
+            "DATASOURCE_USERNAME", "admin",
+            "DATASOURCE_PASSWORD", Fn.importValue("rds-password")
+    );
     public ServiceStack(final Construct scope, final String id, Cluster cluster) {
         this(scope, id, null, cluster);
     }
@@ -20,15 +25,16 @@ public class ServiceStack extends Stack {
     public ServiceStack(final Construct scope, final String id, final StackProps props, Cluster cluster) {
         super(scope, id, props);
 
+
         final var service = ApplicationLoadBalancedFargateService.Builder.create(this, "ALB-ibeer")
-                .serviceName("ibeer-service")
+                .serviceName("ibeer-service-fargate")
                 .cluster(cluster)
                 .cpu(512)
                 .memoryLimitMiB(1024)
                 .desiredCount(2)
                 .listenerPort(8081)
                 .assignPublicIp(true)
-                .taskImageOptions(alb())
+                .taskImageOptions(task())
                 .publicLoadBalancer(true)
                 .build();
 
@@ -55,12 +61,13 @@ public class ServiceStack extends Stack {
         );
     }
 
-    private ApplicationLoadBalancedTaskImageOptions alb() {
+    private ApplicationLoadBalancedTaskImageOptions task() {
         return ApplicationLoadBalancedTaskImageOptions.builder()
                 .containerName("ibeer-app")
-                .image(ContainerImage.fromRegistry("ipaixao/i-beer:0.0.2"))
+                .image(ContainerImage.fromRegistry("ipaixao/i-beer:0.1.1"))
                 .containerPort(8081)
                 .logDriver(logDriver())
+                .environment(ENV_VARIABLES)
                 .build();
     }
 

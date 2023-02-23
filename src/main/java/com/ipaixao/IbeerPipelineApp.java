@@ -2,6 +2,7 @@ package com.ipaixao;
 
 import com.ipaixao.service.ServiceStack;
 import com.ipaixao.stack.ClusterStack;
+import com.ipaixao.stack.RdsStack;
 import com.ipaixao.stack.VpcStack;
 import software.amazon.awscdk.core.App;
 
@@ -14,8 +15,12 @@ public class IbeerPipelineApp {
         final var clusterStack = new ClusterStack(app, "ibeer-cluster", vpcStack.getVpc());
         clusterStack.addDependency(vpcStack);
 
+        final var rdsStack = new RdsStack(app, "ibeer-aurora-rds", vpcStack.getVpc());
+        rdsStack.addDependency(vpcStack);
+
         final var serviceStack = new ServiceStack(app, "ibeer-service", clusterStack.getCluster());
         serviceStack.addDependency(clusterStack);
+        serviceStack.addDependency(rdsStack);
 
         app.synth();
     }
